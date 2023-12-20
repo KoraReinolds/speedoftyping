@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 
-
 const props = defineProps<{ text: string }>()
-const inputText = ref('vates')
+const inputText = ref('')
 
 const parseText = (text: string) => {
   return text
@@ -12,13 +11,16 @@ const parseText = (text: string) => {
 }
 
 const words = computed(() => parseText(props.text))
+const inputWords = computed(() => parseText(inputText.value))
 
 const displayWords = computed(() => {
-  const parsedInputText = parseText(inputText.value)
 
   return words.value.map((word, wordIndex) => {
-    const inputWord = parsedInputText[wordIndex]
-    const displayWord = inputWord || word
+    const inputWord = inputWords.value[wordIndex]
+    const displayWord = (inputWord && inputWord.length > word.length)
+      ? [...inputWord]
+      : [...word]
+    displayWord.push(' ') // space
     return displayWord.map(
       (_, letterIndex) => [
         word?.[letterIndex],
@@ -28,15 +30,20 @@ const displayWords = computed(() => {
   })
 })
 
-const cursor = ref({
-  wordIndex: 0,
-  letterIndex: 1,
-})
+const cursor = computed(() => ({
+  wordIndex: inputWords.value.length - 1,
+  letterIndex: inputWords.value.at(-1)?.length || 0,
+}))
+
+const setCursorToEnd = (e) => {
+  e.target?.setSelectionRange(inputText.value.length, inputText.value.length)
+}
 
 </script>
 
 <template>
-  <div class="text">
+  <input autofocus id="text" type="text" v-model="inputText" @keydown="setCursorToEnd">
+  <label for="text" class="text">
     <span v-for="(word, wordIndex) in displayWords" class="word">
       <span v-for="(letter, letterIndex) in word" :class="{
         letter: true,
@@ -47,10 +54,18 @@ const cursor = ref({
         {{ letter[0] || letter[1] }}
       </span>
     </span>
-  </div>
+  </label>
 </template>
 
 <style scoped>
+#text {
+  height: 0;
+  width: 0;
+  border: 0;
+  background: transparent;
+  padding: 0;
+}
+
 .text {
   max-width: 800px;
   font-size: 1.8em;
@@ -76,7 +91,7 @@ const cursor = ref({
   position: relative;
 }
 
-.letter.cursor::before {
+#text:focus+.text .letter.cursor::before {
   content: '';
   position: absolute;
   width: 2px;
