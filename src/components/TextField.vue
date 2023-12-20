@@ -2,9 +2,12 @@
 import { computed, ref, watch } from 'vue';
 
 const props = defineProps<{ text: string }>()
+const emits = defineEmits<{
+  error: []
+  char: []
+}>()
+
 const inputText = ref('')
-const errorCounter = ref(0)
-const charCounter = ref(0)
 
 const parseText = (text: string) => {
   return text
@@ -54,8 +57,8 @@ watch(cursor, (newValue, oldValue) => {
   const { wordIndex, letterIndex } = oldValue
   const [first, second] = displayWords.value[wordIndex][letterIndex]
 
-  if (first !== second) errorCounter.value += 1
-  charCounter.value += 1
+  if (first !== second) emits('error')
+  emits('char')
 
 })
 
@@ -66,11 +69,6 @@ const setCursorToEnd = (e) => {
 </script>
 
 <template>
-  <div class="info">
-    <div class="error">{{ errorCounter }} errors</div>
-    <div class="speed">{{ charCounter }} chars</div>
-  </div>
-
   <input autofocus id="text" type="text" v-model="inputText" @keydown="setCursorToEnd">
   <label for="text" class="text">
     <span v-for="(word, wordIndex) in displayWords" class="word">
@@ -140,19 +138,5 @@ const setCursorToEnd = (e) => {
   50% {
     opacity: 1;
   }
-}
-
-.info {
-  display: flex;
-  flex-direction: column;
-}
-
-.info .error,
-.info .speed {
-  margin-left: auto;
-}
-
-.info .error {
-  color: rgb(236, 117, 117);
 }
 </style>

@@ -8,7 +8,7 @@ const props = defineProps<{
 
 function formatTime(time: number) {
   return [
-    Math.floor(time / 1000 % 60) || 0,
+    (Math.floor(time / 100 % 600) || 0) / 10,
     Math.floor(time / 1000 / 60) || 0
   ]
 }
