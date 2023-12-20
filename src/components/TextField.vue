@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 
 const props = defineProps<{ text: string }>()
 const inputText = ref('')
+const errorCounter = ref(0)
+const charCounter = ref(0)
 
 const parseText = (text: string) => {
   return text
@@ -30,10 +32,32 @@ const displayWords = computed(() => {
   })
 })
 
-const cursor = computed(() => ({
+type Cursor = {
+  wordIndex: number
+  letterIndex: number
+}
+
+const cursor = computed<Cursor>(() => ({
   wordIndex: inputWords.value.length - 1,
   letterIndex: inputWords.value.at(-1)?.length || 0,
 }))
+
+function isEraseLetter(newCursor: Cursor, oldCursor: Cursor) {
+  return (newCursor.letterIndex < oldCursor.letterIndex)
+    || (newCursor.wordIndex < oldCursor.wordIndex)
+}
+
+watch(cursor, (newValue, oldValue) => {
+
+  if (isEraseLetter(newValue, oldValue)) return
+
+  const { wordIndex, letterIndex } = oldValue
+  const [first, second] = displayWords.value[wordIndex][letterIndex]
+
+  if (first !== second) errorCounter.value += 1
+  charCounter.value += 1
+
+})
 
 const setCursorToEnd = (e) => {
   e.target?.setSelectionRange(inputText.value.length, inputText.value.length)
@@ -42,6 +66,12 @@ const setCursorToEnd = (e) => {
 </script>
 
 <template>
+  <div class="info">
+    <div class="error">{{ errorCounter }} errors</div>
+    <div class="speed">{{ charCounter }} chars</div>
+
+  </div>
+
   <input autofocus id="text" type="text" v-model="inputText" @keydown="setCursorToEnd">
   <label for="text" class="text">
     <span v-for="(word, wordIndex) in displayWords" class="word">
@@ -111,5 +141,19 @@ const setCursorToEnd = (e) => {
   50% {
     opacity: 1;
   }
+}
+
+.info {
+  display: flex;
+  flex-direction: column;
+}
+
+.info .error,
+.info .speed {
+  margin-left: auto;
+}
+
+.info .error {
+  color: rgb(236, 117, 117);
 }
 </style>
