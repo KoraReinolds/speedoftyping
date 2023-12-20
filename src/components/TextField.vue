@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
 
-const props = defineProps<{ text: string }>()
+const props = defineProps<{ text: string, disabled: boolean }>()
 const emits = defineEmits<{
   error: []
   char: []
@@ -69,7 +69,7 @@ const setCursorToEnd = (e) => {
 </script>
 
 <template>
-  <input autofocus id="text" type="text" v-model="inputText" @keydown="setCursorToEnd">
+  <input :disabled="disabled" autofocus id="text" type="text" v-model="inputText" @keydown="setCursorToEnd">
   <label for="text" class="text">
     <span v-for="(word, wordIndex) in displayWords" class="word">
       <span v-for="(letter, letterIndex) in word" :class="{

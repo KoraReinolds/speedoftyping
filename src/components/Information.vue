@@ -1,13 +1,13 @@
 <script setup lang="ts">
 
-defineProps<{ errors: number, chars: number }>()
+defineProps<{ errors: number, speed: number }>()
 
 </script>
 
 <template>
   <div class="info">
     <div class="error">{{ errors }} errors</div>
-    <div class="speed">{{ chars }} chars</div>
+    <div class="speed">{{ Math.round(speed * 60) || 0 }} chars/min</div>
   </div>
 </template>
 
