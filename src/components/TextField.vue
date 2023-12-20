@@ -69,7 +69,6 @@ const setCursorToEnd = (e) => {
   <div class="info">
     <div class="error">{{ errorCounter }} errors</div>
     <div class="speed">{{ charCounter }} chars</div>
-
   </div>
 
   <input autofocus id="text" type="text" v-model="inputText" @keydown="setCursorToEnd">
