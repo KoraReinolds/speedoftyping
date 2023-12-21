@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onUnmounted } from 'vue';
 import TextField from './components/TextField.vue'
 import Timer from './components/Timer.vue';
 import useTimer from './composables/timer';
@@ -50,7 +50,7 @@ function getRandomQuote() {
 
   (window as any)[callbackFunctionName] = (data: any) => {
     if (data?.quoteText) {
-      lastText.value = data.quoteText
+      lastText.value = data.quoteText.trim()
       resetAll()
     }
     document.body.removeChild(script)
@@ -66,6 +66,18 @@ function getRandomQuote() {
 
 getRandomQuote()
 
+function handleKeyUp(e: KeyboardEvent) {
+  if (status.value === 'finish') {
+    if (e.code === 'KeyA') resetAll()
+    else if (e.code === 'KeyN') getRandomQuote()
+  }
+}
+
+document.body.addEventListener('keyup', handleKeyUp)
+
+onUnmounted(stop)
+onUnmounted(() => document.body.removeEventListener('keyup', handleKeyUp))
+
 </script>
 
 <template>
@@ -76,8 +88,8 @@ getRandomQuote()
       @char="increaseChar" @error="increaseError" />
   </div>
   <div class="actions" v-if="status === 'finish'">
-    <button @click="resetAll">Again</button>
-    <button @click="getRandomQuote">Next</button>
+    <button @click="resetAll">A - Again</button>
+    <button @click="getRandomQuote">N - Next</button>
   </div>
 </template>
 
