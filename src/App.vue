@@ -5,7 +5,14 @@ import Timer from './components/Timer.vue';
 import useTimer from './composables/timer';
 import Information from './components/Information.vue';
 
-const { reset, start, stop, current, total, status } = useTimer(20)
+const url = new URL(window.location.href).searchParams
+const initialTimerValue = +(url.get('timer') || 70)
+if (!url.get('timer')) {
+  url.set('timer', `${initialTimerValue}`)
+  window.history.replaceState({}, '', '?' + url.toString())
+}
+
+const { reset, start, stop, current, total, status } = useTimer(initialTimerValue)
 
 function startTimer() {
   if (status.value === 'pending') {
@@ -81,7 +88,7 @@ onUnmounted(() => document.body.removeEventListener('keyup', handleKeyUp))
 </script>
 
 <template>
-  <div>
+  <div v-if="lastText">
     <Information :chars="correctCharCounter" :speed="charCounter / ((total - current) / 1000)" :errors="errorCounter" />
     <Timer :current="current" :total="total" />
     <TextField :disabled="status === 'finish'" :text="text" @end="stop" @correctChar="increaseCorrectChar"
