@@ -1,12 +1,11 @@
 <script setup lang="ts">
-import { nextTick, ref } from 'vue';
+import { ref } from 'vue';
 import TextField from './components/TextField.vue'
 import Timer from './components/Timer.vue';
 import useTimer from './composables/timer';
 import Information from './components/Information.vue';
 
-const defaultTimer = 20
-const { start, stop, current, total, status } = useTimer(defaultTimer)
+const { reset, start, stop, current, total, status } = useTimer(20)
 
 function startTimer() {
   if (status.value === 'pending') {
@@ -17,8 +16,8 @@ function startTimer() {
 const errorCounter = ref(0)
 const charCounter = ref(0)
 const correctCharCounter = ref(0)
-const lastText = 'Vite + agfds fdg sfgd Vue Vite'
-const text = ref(lastText)
+const lastText = ref('')
+const text = ref(lastText.value)
 
 function increaseError() {
   errorCounter.value += 1
@@ -33,10 +32,39 @@ function increaseCorrectChar() {
   correctCharCounter.value += 1
 }
 
-function again() {
-  start()
-  text.value = lastText
+function resetAll() {
+  reset()
+  errorCounter.value = 0
+  charCounter.value = 0
+  correctCharCounter.value = 0
+  text.value = lastText.value
 }
+
+function getRandomQuote() {
+
+  const apiUrl = `http://api.forismatic.com/api/1.0/?method=getQuote&lang=en&format=jsonp`
+
+  const script = document.createElement('script')
+
+  const callbackFunctionName = 'jsonpCallback_' + Math.round(100000 * Math.random());
+
+  (window as any)[callbackFunctionName] = (data: any) => {
+    if (data?.quoteText) {
+      lastText.value = data.quoteText
+      resetAll()
+    }
+    document.body.removeChild(script)
+    delete (window as any)[callbackFunctionName]
+  }
+
+  const urlWithCallback = `${apiUrl}&jsonp=${callbackFunctionName}`
+
+  script.src = urlWithCallback
+
+  document.body.appendChild(script)
+}
+
+getRandomQuote()
 
 </script>
 
@@ -48,8 +76,8 @@ function again() {
       @char="increaseChar" @error="increaseError" />
   </div>
   <div class="actions" v-if="status === 'finish'">
-    <button @click="again">Again</button>
-    <button>Next</button>
+    <button @click="resetAll">Again</button>
+    <button @click="getRandomQuote">Next</button>
   </div>
 </template>
 

@@ -23,12 +23,18 @@ export default (initialTime: number) => {
     updateTime()
   }
 
+  function reset() {
+    stop()
+    status.value = 'pending'
+    time.value = 0
+  }
+
   function stop() {
     status.value = 'finish'
     cancelAnimationFrame(frameId.value)
     frameId.value = null
   }
 
-  return { start, stop, current, total, status }
+  return { reset, start, stop, current, total, status }
 
 }
