@@ -1,13 +1,20 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { computed, nextTick, ref, watch } from 'vue';
+type Cursor = {
+  wordIndex: number
+  letterIndex: number
+}
 
 const props = defineProps<{ text: string, disabled: boolean }>()
 const emits = defineEmits<{
   error: []
   char: []
+  correctChar: []
+  end: []
 }>()
 
 const inputText = ref('')
+const inputEl = ref()
 
 const parseText = (text: string) => {
   return text
@@ -16,6 +23,7 @@ const parseText = (text: string) => {
 }
 
 const words = computed(() => parseText(props.text))
+const lastCursor = computed(() => getCursorFromParsedText(words.value))
 const inputWords = computed(() => parseText(inputText.value))
 
 const displayWords = computed(() => {
@@ -35,47 +43,83 @@ const displayWords = computed(() => {
   })
 })
 
-type Cursor = {
-  wordIndex: number
-  letterIndex: number
+function getCursorFromParsedText(text: string[][]) {
+  return {
+    wordIndex: text.length - 1,
+    letterIndex: text.at(-1)?.length || 0,
+  }
 }
 
-const cursor = computed<Cursor>(() => ({
-  wordIndex: inputWords.value.length - 1,
-  letterIndex: inputWords.value.at(-1)?.length || 0,
-}))
+const cursor = computed<Cursor>(() => getCursorFromParsedText(inputWords.value))
 
-function isEraseLetter(newCursor: Cursor, oldCursor: Cursor) {
-  return (newCursor.letterIndex < oldCursor.letterIndex)
-    || (newCursor.wordIndex < oldCursor.wordIndex)
+function compareCursor(first: Cursor, second: Cursor) {
+  if (first.wordIndex < second.wordIndex) return -1
+  if (first.wordIndex > second.wordIndex) return 1
+  if (first.letterIndex < second.letterIndex) return -1
+  if (first.letterIndex > second.letterIndex) return 1
+  return 0
 }
+
+watch(() => props.disabled, (value) => {
+  if (!value) {
+    inputText.value = ''
+    if (inputEl.value instanceof HTMLInputElement) {
+      nextTick(() => inputEl.value.focus())
+    }
+  }
+})
 
 watch(cursor, (newValue, oldValue) => {
 
-  if (isEraseLetter(newValue, oldValue)) return
+  if (compareCursor(newValue, lastCursor.value) > -1) emits('end')
+
+  if (compareCursor(newValue, oldValue) < 1) return
 
   const { wordIndex, letterIndex } = oldValue
   const [first, second] = displayWords.value[wordIndex][letterIndex]
 
   if (first !== second) emits('error')
+  else emits('correctChar')
   emits('char')
 
 })
 
-const setCursorToEnd = (e) => {
-  e.target?.setSelectionRange(inputText.value.length, inputText.value.length)
+function setCursorToEnd(input: HTMLInputElement) {
+  input.setSelectionRange(inputText.value.length, inputText.value.length)
+}
+
+function extraLimit() {
+  const curentWord = words.value[cursor.value.wordIndex]
+  const inputWord = displayWords.value[cursor.value.wordIndex]
+
+  return inputWord?.length - curentWord?.length > 3
+}
+
+function isFirstLetter() {
+  return cursor.value.letterIndex === 0
+}
+
+function validateInput(e: KeyboardEvent) {
+  if ((e.code !== 'Backspace' && e.code !== 'Space' && extraLimit())
+    || (e.code === 'Space' && isFirstLetter())) {
+    e.preventDefault()
+  }
+  if (e.target && e.target instanceof HTMLInputElement) {
+    setCursorToEnd(e.target)
+  }
 }
 
 </script>
 
 <template>
-  <input :disabled="disabled" autofocus id="text" type="text" v-model="inputText" @keydown="setCursorToEnd">
+  <input ref="inputEl" :disabled="disabled" autofocus id="text" type="text" v-model="inputText" @keydown="validateInput">
   <label for="text" class="text">
     <span v-for="(word, wordIndex) in displayWords" class="word">
       <span v-for="(letter, letterIndex) in word" :class="{
         letter: true,
         error: letter[1] && letter[1] !== letter[0],
         correct: letter[1] && letter[1] === letter[0],
+        extra: !letter[0] && letter[1],
         cursor: cursor.wordIndex === wordIndex && cursor.letterIndex === letterIndex
       }">
         {{ letter[0] || letter[1] }}
@@ -115,7 +159,10 @@ const setCursorToEnd = (e) => {
 
 .letter.error {
   color: rgb(236, 117, 117);
-  position: relative;
+}
+
+.letter.extra {
+  color: rgb(145, 74, 74);
 }
 
 #text:focus+.text .letter.cursor::before {

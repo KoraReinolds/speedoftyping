@@ -1,12 +1,13 @@
 <script setup lang="ts">
 
-defineProps<{ errors: number, speed: number }>()
+defineProps<{ errors: number, speed: number, chars: number }>()
 
 </script>
 
 <template>
   <div class="info">
     <div class="error">{{ errors }} errors</div>
+    <div class="char">{{ chars }} chars</div>
     <div class="speed">{{ Math.round(speed * 60) || 0 }} chars/min</div>
   </div>
 </template>
@@ -17,8 +18,7 @@ defineProps<{ errors: number, speed: number }>()
   flex-direction: column;
 }
 
-.info .error,
-.info .speed {
+.info div {
   margin-left: auto;
 }
 
